@@ -8,6 +8,7 @@ RUN apt-get update \
     libpq-dev \
     gettext \
     git \
+    procps \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendImport=false \
     && rm -rf /var/lib/lists/*
 
