@@ -1,0 +1,6 @@
+-r requirements.txt
+-r requirements.test.txt
+flower==2.0.1
+django-debug-toolbar==3.4.0
+pre-commit==4.0.1
+mypy==1.13.0
