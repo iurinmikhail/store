@@ -1,0 +1,39 @@
+[project]
+requires-python = ">=3.12"
+name = "store"
+
+[tool.ruff]
+line-length = 119
+target-version = "py312"
+exclude = [
+    ".git",
+    ".pre-commit-config.yml",
+    ".gitignore",
+    ".dockerignore",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".env",
+    ".vscode",
+    "__pypackages__",
+    "venv",
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint.isort]
+section-order = ["future", "standard-library", "third-party", "drf", "django", "first-party", "local-folder"]
+
+[tool.ruff.lint.isort.sections]
+"drf" = ["rest_framework"]
+"django" = ["django"]
+
+[tool.mypy]
+exclude = [
+    "manage\\.py$",
+    "/migrations/",
+    "admin\\.py$",
+    "venv",
+]
+ignore_missing_imports = true

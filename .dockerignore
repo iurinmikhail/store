@@ -1,3 +1,5 @@
 venv
 .env
 .dockerignore
+.mypy_cache
+.ruff_cache
