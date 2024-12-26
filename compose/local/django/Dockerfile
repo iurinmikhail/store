@@ -12,8 +12,8 @@ RUN apt-get update \
     && rm -rf /var/lib/lists/*
 
 COPY ./requirements.txt /requirements.txt
-RUN pip instal uv
-RUN uv pip install -r /requirements.txt
+RUN pip install uv
+RUN uv pip install --system -r /requirements.txt
 
 COPY ./compose/local/django/entrypoint /entrypoint
 RUN sed -i 's/\r$//g' /entrypoint
