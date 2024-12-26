@@ -3,8 +3,11 @@ requires-python = ">=3.12"
 name = "store"
 
 [tool.ruff]
-line-length = 119
 target-version = "py312"
+line-length = 119
+
+[tool.ruff.lint]
+select = ["ALL"]
 exclude = [
     ".git",
     ".pre-commit-config.yml",
@@ -16,7 +19,11 @@ exclude = [
     ".env",
     ".vscode",
     "__pypackages__",
+    "__pycache__",
     "venv",
+]
+ignore = [
+"D",
 ]
 
 [tool.ruff.lint.mccabe]
@@ -28,6 +35,7 @@ section-order = ["future", "standard-library", "third-party", "drf", "django", "
 [tool.ruff.lint.isort.sections]
 "drf" = ["rest_framework"]
 "django" = ["django"]
+
 
 [tool.mypy]
 exclude = [
