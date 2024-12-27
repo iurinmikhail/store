@@ -44,4 +44,5 @@ exclude = [
     "admin\\.py$",
     "venv",
 ]
+install-types = true
 ignore_missing_imports = true

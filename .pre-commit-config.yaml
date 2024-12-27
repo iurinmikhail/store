@@ -20,4 +20,5 @@ repos:
     hooks:
       - id: mypy
         args:
+          - --install-types
           - --config-file=pyproject.toml
