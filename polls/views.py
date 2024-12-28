@@ -5,6 +5,7 @@ from celery.result import AsyncResult
 
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.views.decorators.csrf import csrf_exempt
 
 from polls.forms import YourForm
 from polls.tasks import sample_task
@@ -16,7 +17,7 @@ def api_call(email: str) -> None:  # noqa: ARG001
         error_message = "random processing error"
         raise Exception(error_message)  # noqa: TRY002
 
-    # Симулятор вызова блокирующего запроса
+    # Блокирующий процесс
     requests.post("https://httpbin.org/delay/5", timeout=5)
 
 
@@ -54,3 +55,14 @@ def task_status(request: HttpRequest) -> JsonResponse | None:
             }
         return JsonResponse(response)
     return None
+
+
+@csrf_exempt
+def webhook_test(request: HttpRequest) -> HttpResponse:  # noqa: ARG001
+    if not random.choice([0, 1]):  # noqa: S311
+        # Тест ошибуи
+        raise Exception  # noqa: TRY002
+
+    # Блокирующий процесс
+    requests.post("https://httpbin.org/delay/5", timeout=5)
+    return HttpResponse("pong")
