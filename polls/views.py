@@ -1,4 +1,4 @@
-import random
+import logging
 
 import requests
 from celery.result import AsyncResult
@@ -8,14 +8,13 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
 from polls.forms import YourForm
-from polls.tasks import sample_task
+from polls.tasks import sample_task, simulate_error, task_process_notification
+
+logger = logging.getLogger(__name__)
 
 
 def api_call(email: str) -> None:  # noqa: ARG001
-    # Используется для теста возникновения ошибки
-    if random.choice([0, 1]):  # noqa: S311
-        error_message = "random processing error"
-        raise Exception(error_message)  # noqa: TRY002
+    simulate_error("random processing error")
 
     # Блокирующий процесс
     requests.post("https://httpbin.org/delay/5", timeout=(60, 60))
@@ -59,10 +58,16 @@ def task_status(request: HttpRequest) -> JsonResponse | None:
 
 @csrf_exempt
 def webhook_test(request: HttpRequest) -> HttpResponse:  # noqa: ARG001
-    if not random.choice([0, 1]):  # noqa: S311
-        # Тест ошибуи
-        raise Exception  # noqa: TRY002
+    simulate_error()
 
     # Блокирующий процесс
     requests.post("https://httpbin.org/delay/5", timeout=(60, 60))
+    return HttpResponse("pong")
+
+
+@csrf_exempt
+def webhook_test_async(request: HttpRequest) -> HttpResponse:  # noqa: ARG001
+    """Асинхронно обрабатывает вебхуки."""
+    task = task_process_notification.delay()
+    logger.info(task.id)
     return HttpResponse("pong")
