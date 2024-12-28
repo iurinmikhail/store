@@ -18,7 +18,7 @@ def api_call(email: str) -> None:  # noqa: ARG001
         raise Exception(error_message)  # noqa: TRY002
 
     # Блокирующий процесс
-    requests.post("https://httpbin.org/delay/5", timeout=5)
+    requests.post("https://httpbin.org/delay/5", timeout=(60, 60))
 
 
 def subscribe(request: HttpRequest) -> JsonResponse | HttpResponse:
@@ -64,5 +64,5 @@ def webhook_test(request: HttpRequest) -> HttpResponse:  # noqa: ARG001
         raise Exception  # noqa: TRY002
 
     # Блокирующий процесс
-    requests.post("https://httpbin.org/delay/5", timeout=5)
+    requests.post("https://httpbin.org/delay/5", timeout=(60, 60))
     return HttpResponse("pong")
