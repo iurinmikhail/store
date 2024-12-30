@@ -71,3 +71,21 @@ def webhook_test_async(request: HttpRequest) -> HttpResponse:  # noqa: ARG001
     task = task_process_notification.delay()
     logger.info(task.id)
     return HttpResponse("pong")
+
+
+def subscribe_ws(request: HttpRequest) -> JsonResponse | HttpResponse:
+    """Использует вебсокеты для получения уведомления Celery,
+    вместо использования опросов ajax
+    """
+    if request.method == "POST":
+        form = YourForm(request.POST)
+        if form.is_valid():
+            task = sample_task.delay(form.cleaned_data["email"])
+            return JsonResponse(
+                {
+                    "task_id": task.task_id,
+                },
+            )
+
+    form = YourForm()
+    return render(request, "form_ws.html", {"form": form})

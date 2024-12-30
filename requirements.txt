@@ -6,3 +6,6 @@ psycopg2-binary==2.9.9
 watchfiles==0.21.0
 requests==2.31.0
 types-requests
+daphne==4.0.0
+channels==4.0.0
+channels-redis==4.1.0
