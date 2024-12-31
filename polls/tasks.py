@@ -44,3 +44,13 @@ def task_process_notification(self: Task) -> None:
     except RandomError as e:
         logger.exception("RandomError raised, it would be retry after 5 seconds")
         self.retry(exc=e, countdown=5)
+
+
+@shared_task(name="task_clear_session")
+def task_clear_session() -> None:
+    """Задача очистки истекших сессий.
+    https://docs.djangoproject.com/en/5.1/ref/django-admin/#clearsessions
+    """
+    from django.core.management import call_command
+
+    call_command("clearsessions")
