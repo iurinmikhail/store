@@ -1,11 +1,29 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+     POSTGRES_DB: store_db
+     POSTGRES_USER: postgres
+     POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+
   web:
     build:
       context: .
       dockerfile: ./compose/local/django/Dockerfile
-    image: store_web
+    image: store
+    container_name: store_web
     command: /start
     volumes:
       - .:/app
@@ -14,26 +32,12 @@ services:
     env_file:
       - ./.env/.dev-sample
     depends_on:
-      - redis
-      - db
-
-  db:
-    image: postgres:16-alpine
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    environment:
-     - POSTGRES_DB=store_db
-     - POSTGRES_USER=postgres
-     - POSTGRES_PASSWORD=postgres
-
-  redis:
-    image: redis:7-alpine
+      db:
+        condition: service_healthy
 
   worker:
-    build:
-      context: .
-      dockerfile: ./compose/local/django/Dockerfile
-    image: store_worker
+    image: store
+    container_name: store_worker
     command: /start-worker
     volumes:
      - ./:/app
@@ -44,10 +48,8 @@ services:
       - db
 
   beat:
-    build:
-      context: .
-      dockerfile: ./compose/local/django/Dockerfile
-    image: store_beat
+    image: store
+    container_name: store_beat
     command: /start-beat
     volumes:
       - .:/app
@@ -58,10 +60,8 @@ services:
       - db
 
   flower:
-    build:
-      context: .
-      dockerfile: ./compose/local/django/Dockerfile
-    image: store_flower
+    image: store
+    container_name: store_flower
     command: /start-flower
     volumes:
       - ./:/app
