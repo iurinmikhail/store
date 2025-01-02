@@ -12,7 +12,12 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, ParamSpec
+
+from celery import Task
+from kombu import Queue
+
+P = ParamSpec("P")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -92,6 +97,33 @@ DATABASES = {
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_BACKEND", "redis://127.0.0.1:6379/0")
 CELERY_BEAT_SCHEDULE: dict[str, Any] = {}
+CELERY_TASK_DEFAULT_QUEUE = "default"
+CELERY_TASK_CREATE_MISSING_QUEUES = False
+CELERY_TASK_QUEUES = (
+    # need to define default queue here or exception would be raised
+    Queue("default"),
+    Queue("high_priority"),
+    Queue("low_priority"),
+)
+
+
+def route_task(
+    name: str,
+    args: Any,  # noqa: ARG001, ANN401
+    kwargs: Any,  # noqa: ARG001, ANN401
+    options: Any,  # noqa: ARG001, ANN401
+    task: Task = None,  # noqa: ARG001
+    *arg: P.args,  # noqa: ARG001
+    **kw: P.kwargs,  # noqa: ARG001
+) -> dict[str, str]:
+    # dynamic task routing
+    if ":" in name:
+        queue, _ = name.split(":")
+        return {"queue": queue}
+    return {"queue": "default"}
+
+
+CELERY_TASK_ROUTES = (route_task,)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

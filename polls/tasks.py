@@ -54,3 +54,26 @@ def task_clear_session() -> None:
     from django.core.management import call_command
 
     call_command("clearsessions")
+
+
+@shared_task(name="default:dynamic_example_one")
+def dynamic_example_one() -> None:
+    logger.info("Example One")
+
+
+@shared_task(name="low_priority:dynamic_example_two")
+def dynamic_example_two() -> None:
+    logger.info("Example Two")
+
+
+@shared_task(name="high_priority:dynamic_example_three")
+def dynamic_example_three() -> None:
+    logger.info("Example Three")
+
+
+@shared_task(name="divide")
+def divide(x: int, y: int) -> float:
+    from time import sleep
+
+    sleep(5)
+    return x / y

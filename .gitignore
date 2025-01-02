@@ -216,3 +216,5 @@ tags
 .idea/
 
 .pytest_cache/
+
+.codegpt
