@@ -1,5 +1,5 @@
 import random
-from typing import ParamSpec
+from typing import ClassVar, ParamSpec
 
 import requests
 from celery import Task, shared_task
@@ -14,6 +14,12 @@ P = ParamSpec("P")
 
 
 class RandomError(Exception): ...
+
+
+class BaseTaskWithRetry(Task):
+    autoretry_for: ClassVar[tuple[type, ...]] = (RandomError,)
+    retry_kwargs: ClassVar[dict[str, int]] = {"max_retries": 5}
+    retry_backoff: ClassVar[bool] = True
 
 
 @task_postrun.connect
@@ -34,16 +40,12 @@ def sample_task(email: str) -> None:
     api_call(email)
 
 
-@shared_task(bind=True)
-def task_process_notification(self: Task) -> None:
-    try:
-        simulate_error()
+@shared_task(bind=True, base=BaseTaskWithRetry)
+def task_process_notification(self: Task) -> None:  # noqa: ARG001
+    simulate_error()
 
-        # Блокирующий зарпос
-        requests.post("https://httpbin.org/delay/5", timeout=(60, 60))
-    except RandomError as e:
-        logger.exception("RandomError raised, it would be retry after 5 seconds")
-        self.retry(exc=e, countdown=5)
+    # Блокирующий зарпос
+    requests.post("https://httpbin.org/delay/5", timeout=(60, 60))
 
 
 @shared_task(name="task_clear_session")
