@@ -142,3 +142,8 @@ def task_transaction_test_with_decorator() -> None:
         logger.info(msg_info)
         msg_error = "test"
         raise Exception(msg_error)  # noqa: TRY002
+
+
+@shared_task()
+def task_test_logger() -> None:
+    logger.info("test")
