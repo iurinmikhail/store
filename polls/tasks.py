@@ -1,16 +1,23 @@
+import functools
 import random
-from typing import ClassVar, ParamSpec
+import uuid
+from collections.abc import Callable
+from typing import ClassVar, ParamSpec, TypeVar
 
 import requests
 from celery import Task, shared_task
 from celery.signals import task_postrun
 from celery.utils.log import get_task_logger
 
+from django.contrib.auth.models import User
+from django.db import transaction
+
 from polls.consumers import notify_channel_layer
 
 logger = get_task_logger(__name__)
 
 P = ParamSpec("P")
+R = TypeVar("R")
 
 
 class RandomError(Exception): ...
@@ -20,6 +27,27 @@ class BaseTaskWithRetry(Task):
     autoretry_for: ClassVar[tuple[type, ...]] = (RandomError,)
     retry_kwargs: ClassVar[dict[str, int]] = {"max_retries": 5}
     retry_backoff: ClassVar[bool] = True
+
+
+class custom_celery_task:  # noqa: N801
+    """Декоратор, который добавляет настройку транзакции и retry."""
+
+    def __init__(self, *args: P.args, **kwargs: P.kwargs) -> None:
+        self.task_args = args
+        self.task_kwargs = kwargs
+
+    def __call__(self, func: Callable[P, R]) -> Callable[P, R]:
+        @functools.wraps(func)
+        def wrapper_func(*args: P.args, **kwargs: P.kwargs) -> R:
+            try:
+                with transaction.atomic():
+                    return func(*args, **kwargs)
+            except Exception as e:  # noqa: BLE001
+                # task_func.request.retries
+                raise task_func.retry(exc=e, countdown=5)  # noqa: B904
+
+        task_func = shared_task(*self.task_args, **self.task_kwargs)(wrapper_func)
+        return task_func  # noqa: RET504
 
 
 @task_postrun.connect
@@ -79,3 +107,38 @@ def divide(x: int, y: int) -> float:
 
     sleep(5)
     return x / y
+
+
+@shared_task
+def task_send_welcome_email(user_pk: uuid.UUID) -> None:
+    user = User.objects.get(pk=user_pk)
+    msg = f"send email to {user.email} {user.pk}"
+    logger.info(msg)
+
+
+@shared_task
+def task_transaction_test() -> None:
+    with transaction.atomic():
+        from .views import random_username
+
+        username = random_username()
+        user = User.objects.create(username, "email@email.org", "password")
+        user.save()
+        msg_info = f"send email to {user.pk}"
+        logger.info(msg_info)
+        msg_error = "test"
+        raise Exception(msg_error)  # noqa: TRY002
+
+
+@custom_celery_task(max_retries=5)
+def task_transaction_test_with_decorator() -> None:
+    with transaction.atomic():
+        from .views import random_username
+
+        username = random_username()
+        user = User.objects.create(username, "email@email.org", "password")
+        user.save()
+        msg_info = f"send email to {user.pk}"
+        logger.info(msg_info)
+        msg_error = "test"
+        raise Exception(msg_error)  # noqa: TRY002

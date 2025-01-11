@@ -1,16 +1,26 @@
 import logging
+import random
+import time
+from functools import partial
+from string import ascii_lowercase
 
 import requests
 from celery.result import AsyncResult
 
+from django.contrib.auth.models import User
+from django.db import transaction
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 
 from polls.forms import YourForm
-from polls.tasks import sample_task, simulate_error, task_process_notification
+from polls.tasks import sample_task, simulate_error, task_process_notification, task_send_welcome_email
 
 logger = logging.getLogger(__name__)
+
+
+def random_username() -> str:
+    return "".join([random.choice(ascii_lowercase) for i in range(5)])  # noqa: S311
 
 
 def api_call(email: str) -> None:  # noqa: ARG001
@@ -89,3 +99,12 @@ def subscribe_ws(request: HttpRequest) -> JsonResponse | HttpResponse:
 
     form = YourForm()
     return render(request, "form_ws.html", {"form": form})
+
+
+@transaction.atomic
+def transaction_celery(request: HttpRequest) -> HttpResponse:  # noqa: ARG001
+    username = random_username()
+    user = User.objects.create_user(username, "email@email.org", "password")
+    transaction.on_commit(partial(task_send_welcome_email.delay, user.pk))
+    time.sleep(1)
+    return HttpResponse("test")
